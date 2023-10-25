@@ -19,4 +19,4 @@ do
   days=$((datediff/86400))
   certdate=`echo $cert | base64 -d | openssl x509 -noout -enddate| cut -d= -f2`
   printf "$format" "$state" "$days" "$name" "$certdate" "$namespace"
-don
+done
