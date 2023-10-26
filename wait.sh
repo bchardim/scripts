@@ -46,6 +46,7 @@ do
     do
       RETURN=0
       JSON=$(oc get clusteroperators ${oper} -o json) || RETURN=1
+      [ $RETURN -eq 1 ] && echo "Could not reach Openshit API, trying again..."
       FILTER=$(echo $JSON | jq -r '.status.conditions[]|select((.status=="True") and (.type=="Progressing"))') || RETURN=1
       if [ $RETURN -eq 0 ] && [ "x${FILTER}" == "x" ]
       then
@@ -63,6 +64,7 @@ do
   do
     RETURN=0
     JSON=$(oc get mcp -o json) || RETURN=1
+    [ $RETURN -eq 1 ] && echo "Could not reach Openshit API, trying again..."
     FILTER=$(echo $JSON | jq -r '.items[].status.conditions[]|select((.status=="True") and (.type=="Updating"))') || RETURN=1
     if [ $RETURN -eq 0 ] && [ "x${FILTER}" == "x" ]
     then
