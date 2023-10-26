@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-RETRY=2
+RETRY=3
 WAITSEC=600
 NS=openshift-kube-apiserver
 PODR=kube-apiserver-master
@@ -22,6 +22,14 @@ do
   # Wait between retries
   echo "Waiting for OpenShift to auto-renew the internal certificates..."
   sleep ${WAITSEC}
+
+  # Wait for API to come online
+  until [ $(curl -k -s https://api.ocp4.example.com:6443/version?timeout=10s | jq -r '.major' | grep -v null | wc -l) -eq 1 ]
+  do
+    echo "Waiting for Openshift API to come online..."
+    sleep 10
+  done
+  echo "Openshift API is up"
 
   # Searching the CRITICAL_LOG on failed pod
   EXPIRED_CERTS=0
