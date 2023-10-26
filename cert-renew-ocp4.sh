@@ -4,6 +4,7 @@
 RETRY=2
 WAITSEC=600
 NS=openshift-kube-apiserver
+PODR=kube-apiserver-master
 CRITICAL_LOG="x509: certificate signed by unknown authority"
 EXPIRED_CERTS=0
 
@@ -23,7 +24,8 @@ do
   sleep ${WAITSEC}
 
   # Searching the CRITICAL_LOG on failed pod
-  for pod in $(oc get pods -n ${NS} --no-headers | grep -vE "Running|Completed" | awk '{print $1}')
+  EXPIRED_CERTS=0
+  for pod in $(oc get pods -n ${NS} --no-headers | grep -vE "Running|Completed" | awk '{print $1}' | grep ${PODR})
   do
   
     # Search critical logs
@@ -32,10 +34,13 @@ do
 
     while true
     do
+
       # Loop for searching critical logs  
       ((COUNT=COUNT+1))
       RETURN=0
       LOGS=$(oc logs ${pod} -n ${NS}) || RETURN=1 
+      
+      # Check logs
       if [ ${RETURN} -eq 1 ]
       then
         echo "[$COUNT] Could not read logs from failed ${pod} pod, trying again..."
@@ -47,13 +52,16 @@ do
           EXPIRED_CERTS=1 
           break
         fi
-        if [ ${COUNT} -gt 10 ]
-        then
-          echo "[$COUNT] Reached the maximum tries for searching critical logs in faled pods."
-          break
-        fi
       fi
-      sleep 30
+
+      # Break the loop with timeout 
+      if [ ${COUNT} -gt 40 ]
+      then
+        echo "[$COUNT] Reached the maximum tries for searching critical logs in faled pods."
+        break
+      fi
+      sleep 5
+
     done
 
   done
