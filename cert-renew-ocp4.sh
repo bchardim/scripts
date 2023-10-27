@@ -46,19 +46,21 @@ do
       # Loop for searching critical logs  
       ((COUNT=COUNT+1))
       RETURN=0
-      LOGS=$(oc logs ${pod} -n ${NS}) || RETURN=1 
       
       # Check logs
-      if [ ${RETURN} -eq 1 ]
-      then
-        echo "[$COUNT] Could not read logs from failed ${pod} pod, trying again..."
-      else
-        FILTER=$(echo ${LOGS} | grep "${CRITICAL_LOG}" | wc -l) || RETURN=1
-        if [ ${RETURN} -eq 0 ] && [ $FILTER -ne 0 ]
+      LOGS=$(oc logs ${pod} -n ${NS} 2>&1)
+      FILTER=$(echo ${LOGS} | grep "${CRITICAL_LOG}" | wc -l) || RETURN=1
+      if [ ${RETURN} -eq 0 ] && [ $FILTER -ne 0 ]
         then
           echo "[$COUNT] Found the critcal log '${CRITICAL_LOG}' in failed ${pod} pod."
           EXPIRED_CERTS=1 
           break
+      else
+        if [ ${RETURN} -eq 1 ]
+        then
+          echo "[$COUNT] Could not read logs from failed ${pod} pod, trying again..." 
+        else
+          echo "[$COUNT] NOT found critical log '${CRITICAL_LOG}' in failed ${pod} pod, trying again..."
         fi
       fi
 
