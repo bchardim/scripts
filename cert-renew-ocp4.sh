@@ -31,6 +31,14 @@ do
   done
   echo "Openshift API is up"
 
+  # Approve CSRs
+  echo "Approve pending/unissued certificate requests (CSR)."
+  for csr in $(oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name')
+  do
+    oc adm certificate approve ${csr}
+  done
+  sleep 60
+
   # Searching the CRITICAL_LOG on failed pod
   EXPIRED_CERTS=0
   for pod in $(oc get pods -n ${NS} --no-headers | grep -vE "Running|Completed" | awk '{print $1}' | grep ${PODR})
@@ -47,14 +55,6 @@ do
       ((COUNT=COUNT+1))
       RETURN=0
 
-      # Approving CSRs
-      echo "[COUNT] Approving pending/unissued certificate requests (CSR)."
-      for csr in $(oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name')
-      do
-        oc adm certificate approve ${csr}
-      done
-      sleep 60
- 
       # Check logs
       LOGS=$(oc logs ${pod} -n ${NS} 2>&1)
       FILTER=$(echo ${LOGS} | grep "${CRITICAL_LOG}" | wc -l) || RETURN=1
