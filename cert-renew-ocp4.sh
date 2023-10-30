@@ -46,7 +46,15 @@ do
       # Loop for searching critical logs  
       ((COUNT=COUNT+1))
       RETURN=0
-      
+
+      # Approving CSRs
+      echo "[COUNT] Approving pending/unissued certificate requests (CSR)."
+      for csr in $(oc get csr -ojson | jq -r '.items[] | select(.status == {} ) | .metadata.name')
+      do
+        oc adm certificate approve ${csr}
+      done
+      sleep 60
+ 
       # Check logs
       LOGS=$(oc logs ${pod} -n ${NS} 2>&1)
       FILTER=$(echo ${LOGS} | grep "${CRITICAL_LOG}" | wc -l) || RETURN=1
