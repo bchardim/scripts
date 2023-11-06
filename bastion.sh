@@ -12,3 +12,4 @@ rm -rf /var/lib/cloud/data
 rm -rf /var/lib/cloud/sem/config_scripts_per_once.once
 rm -rf /var/log/cloud-init.log
 rm -rf /var/log/cloud-init-output.log
+echo $?
