@@ -1,10 +1,10 @@
 echo "network: {config: disabled}" >> /etc/cloud/cloud.cfg
 echo "network: {config: disabled}" > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
 cloud-init clean --log
-systemctl start cloud-init.service && systemctl enable cloud-init.service
-systemctl start cloud-config.service && systemctl enable cloud-config.service
-systemctl start cloud-init-local.service && systemctl enable cloud-init-local.service
-systemctl start cloud-final.service && systemctl enable cloud-final.service
+systemctl enable cloud-init.service
+systemctl enable cloud-config.service
+systemctl enable cloud-init-local.service
+systemctl enable cloud-final.service
 rm -rf /tmp/callback.sh
 rm -rf /var/lib/cloud/instance
 rm -rf /var/lib/cloud/instances
