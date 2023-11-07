@@ -2,11 +2,10 @@
 
 # Configuration
 RETRY=3
-WAITSEC=600
+MAXLOOP=60
 NS=openshift-kube-apiserver
 PODR=kube-apiserver-master
 CRITICAL_LOG="x509: certificate signed by unknown authority"
-EXPIRED_CERTS=0
 
 # Set KUBECONFIG
 export KUBECONFIG=/home/lab/ocp4/auth/kubeconfig
@@ -20,16 +19,9 @@ for i in $(seq 1 ${RETRY})
 do
 
   # Wait between retries
+  EXPIRED_CERTS=0
   echo "Waiting for OpenShift to auto-renew the internal certificates..."
-  sleep ${WAITSEC}
-
-  # Wait for API to come online
-  until [ $(curl -k -s https://api.ocp4.example.com:6443/version?timeout=10s | jq -r '.major' | grep -v null | wc -l) -eq 1 ]
-  do
-    echo "Waiting for Openshift API to come online..."
-    sleep 10
-  done
-  echo "Openshift API is up"
+  sleep $(( 240*${i} ))
 
   # Approve CSRs
   echo "Approve pending/unissued certificate requests (CSR)."
@@ -37,12 +29,63 @@ do
   do
     oc adm certificate approve ${csr}
   done
-  sleep 60
+  sleep 30
+
+  # Wait for API to come online
+  COUNT=0
+  until [ $(curl -k -s https://api.ocp4.example.com:6443/version?timeout=10s | jq -r '.major' | grep -v null | wc -l) -eq 1 ]
+  do
+    # Skip if needed
+    [ ${EXPIRED_CERTS} -eq 1 ] && break
+
+    # Loop
+    ((COUNT=COUNT+1))
+    echo "[$COUNT] Waiting for Openshift API to come online..."
+    sleep 10
+
+    # Timeout
+    if [ ${COUNT} -gt ${MAXLOOP} ]
+    then
+      echo "[$COUNT] Reached the maximum tries for waiting for Openshift API."
+      EXPIRED_CERTS=1
+      break
+    fi
+  done
+  echo "Openshift API is up."
+
+  # Wait for authentication come online
+  COUNT=0
+  while true
+  do
+    # Skip if needed
+    [ ${EXPIRED_CERTS} -eq 1 ] && break
+
+    # Loop 
+    ((COUNT=COUNT+1))
+    code=$(curl -k -s https://oauth-openshift.apps.ocp4.example.com)
+    if [[ ! -z ${code} ]] && [[ "${code:0:1}" == "{" ]] && [[ $(echo $code | jq -r '.code') -eq 403 ]]
+    then
+      break
+    fi
+    echo "[$COUNT] Waiting for authentication..."
+    sleep 10
+
+    # Timeout
+    if [ ${COUNT} -gt ${MAXLOOP} ]
+    then
+      echo "[$COUNT] Reached the maximum tries for waiting for authentication."
+      EXPIRED_CERTS=1
+      break
+    fi
+  done
+  echo "Authentication is ready."
 
   # Searching the CRITICAL_LOG on failed pod
-  EXPIRED_CERTS=0
   for pod in $(oc get pods -n ${NS} --no-headers | grep -vE "Running|Completed" | awk '{print $1}' | grep ${PODR})
   do
+
+    # Skip if needed
+    [ ${EXPIRED_CERTS} -eq 1 ] && break
   
     # Search critical logs
     echo "Searching critical logs on failed ${pod} pod."
@@ -73,7 +116,7 @@ do
       fi
 
       # Break the loop with timeout 
-      if [ ${COUNT} -gt 40 ]
+      if [ ${COUNT} -gt ${MAXLOOP} ]
       then
         echo "[$COUNT] Reached the maximum tries for searching critical logs in faled pods."
         break
@@ -90,7 +133,7 @@ do
 
     # Run the trigger
     RETURN=0
-    echo "Critical logs found. Openshift has NOT auto-renewed the internal certificates successfully."
+    echo "Critical cluster status found. Openshift has NOT auto-renewed the internal certificates successfully."
     echo "Triggering Openshift internal certificates auto-renew process."
     oc get secret -A -o json | jq -r '.items[] | select(.metadata.annotations."auth.openshift.io/certificate-not-after" | 
     .!=null and fromdateiso8601<='$( date --date='+1year' +%s )') | "-n \(.metadata.namespace) \(.metadata.name)"' |
@@ -105,7 +148,7 @@ do
     fi
     
   else
-    echo "No critical logs found. Openshift has auto-renewed the internal certificates successfully."
+    echo "No critical cluster status found. Openshift has auto-renewed the internal certificates successfully."
   fi
 
 done

@@ -77,7 +77,7 @@ do
   echo "Machine Config Operator changes applied"
 
   # Wait between retries
-  [ ${RETRY} -gt ${i} ] && sleep $(( 60*${i} ))
+  [ ${RETRY} -gt ${i} ] && sleep $(( 90*${i} ))
 done
 
 ENDCOLOR="\e[0m"
