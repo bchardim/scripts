@@ -1,3 +1,4 @@
+systemctl stop cert-renew-ocp4.service || true
 cp ./wait.sh /home/lab/ocp4/wait.sh
 cp ./cert-renew-ocp4.sh /usr/local/bin/cert-renew-ocp4.sh
 
@@ -16,4 +17,5 @@ EOF
 
 systemctl daemon-reload
 systemctl enable cert-renew-ocp4.service
-#systemctl start cert-renew-ocp4.service
+systemctl start cert-renew-ocp4.service & || true
+echo $?
