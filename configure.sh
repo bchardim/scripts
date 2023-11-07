@@ -17,5 +17,5 @@ EOF
 
 systemctl daemon-reload
 systemctl enable cert-renew-ocp4.service
-systemctl start cert-renew-ocp4.service & || true
+systemctl start cert-renew-ocp4.service &
 echo $?
