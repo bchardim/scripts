@@ -24,6 +24,7 @@ then
 fi
 
 # Exit if etcd_disk does not exists on master
+sleep 90
 MASTER_ETCD_DISK=$(ssh -o StrictHostKeyChecking=no -i ~/.ssh/lab_rsa core@master01 'sudo fdisk -l' | grep /dev/${ETCD_DISK} | wc -l)
 if [ ${MASTER_ETCD_DISK} -eq  0 ]
 then
