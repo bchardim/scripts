@@ -9,6 +9,9 @@ LOCK_FILE=/.etcd-migration-ocp4
 # Define etcd_disk
 ETCD_DISK=vdb
 
+# Define master list
+MASTER_LIST="master01 master02 master03"
+
 # Exit if the $LOCK_FILE exists, etcd-migration already done
 if [ -f ${LOCK_FILE} ]
 then
@@ -23,8 +26,22 @@ then
   exit 1
 fi
 
+# Wait for masters to startup
+echo "Waiting for masters to startup ..."
+sleep 120
+
+# Wipe master etcd disk
+for master in ${MASTER_LIST} 
+do
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/lab_rsa core@${master} sudo wipefs -a /dev/${ETCD_DISK}
+  if [ $? -ne 0 ]
+  then
+      echo "ERROR coul not wipe disk /dev/${ETCD_DISK} in ${master} , aborting"
+      exit 1
+  fi
+done
+
 # Exit if etcd_disk does not exists on master
-sleep 90
 MASTER_ETCD_DISK=$(ssh -o StrictHostKeyChecking=no -i ~/.ssh/lab_rsa core@master01 'sudo fdisk -l' | grep /dev/${ETCD_DISK} | wc -l)
 if [ ${MASTER_ETCD_DISK} -eq  0 ]
 then
@@ -38,7 +55,7 @@ echo "Waiting for OCP cluster startup ..."
 
 # Create the etcd-migration MCP, partition etcd_disk and create FS
 echo "Running the etcd-migration MCP /home/lab/ocp4/etcd-mc-0.yml, partition disk and create FS ..."
-oc create -f /home/lab/ocp4/etcd-mc-0.yml $kubeconfig
+oc apply -f /home/lab/ocp4/etcd-mc-0.yml $kubeconfig
 if [ $? -ne 0 ]
 then
   echo "ERROR Could not create etcd-mc-0.yml, aborting"
@@ -52,7 +69,7 @@ echo "Waiting to etcd-mc-0.yml to finish ..."
 
 # Create the etcd-migration MCP, mount /var/lib/etcd on new partition
 echo "Running the etcd-migration MCP /home/lab/ocp4/etcd-mc-1.yml, mount /var/lib/etcd on new partition ..."
-oc create -f /home/lab/ocp4/etcd-mc-1.yml $kubeconfig
+oc apply -f /home/lab/ocp4/etcd-mc-1.yml $kubeconfig
 if [ $? -ne 0 ]
 then
   echo "ERROR Could not create etcd-mc-1.yml, aborting"
@@ -84,5 +101,5 @@ fi
 
 # If migration done, create lock and exit
 echo "Etcd migration completed successfully, exit 0"
-touch ${LOCK_FILE}
+sudo touch ${LOCK_FILE}
 exit 0
