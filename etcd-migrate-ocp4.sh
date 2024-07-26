@@ -3,8 +3,9 @@
 # Define kubeconfig
 kubeconfig="--kubeconfig=/home/lab/ocp4/auth/kubeconfig"
 
-# Define lock file
+# Define lock files
 LOCK_FILE=/.etcd-migration-ocp4 
+LOCK_WIPE=/.etcd-wipe-ocp4
 
 # Define etcd_disk
 ETCD_DISK=vdb
@@ -15,8 +16,8 @@ MASTER_LIST="master01 master02 master03"
 # Exit if the $LOCK_FILE exists, etcd-migration already done
 if [ -f ${LOCK_FILE} ]
 then
-    echo "Lock file detected: ${LOCK_FILE}. Etcd migration already completed, exit 0"
-    exit 0  
+  echo "Lock file detected: ${LOCK_FILE}. Etcd migration already completed, exit 0"
+  exit 0  
 fi
 
 # Abort if etcd_disk is not defined
@@ -30,16 +31,22 @@ fi
 echo "Waiting for masters to startup ..."
 sleep 120
 
-# Wipe master etcd disk
-for master in ${MASTER_LIST} 
-do
-  ssh -o StrictHostKeyChecking=no -i ~/.ssh/lab_rsa core@${master} sudo wipefs -a /dev/${ETCD_DISK}
-  if [ $? -ne 0 ]
-  then
+# Wipe master etcd disks
+if [ -f ${LOCK_WIPE} ]
+then
+  echo "Detected LOCK_WIPE=${LOCK_WIPE}, etcd disks already wiped"
+else
+  for master in ${MASTER_LIST} 
+  do
+    ssh -o StrictHostKeyChecking=no -i ~/.ssh/lab_rsa core@${master} sudo wipefs -a /dev/${ETCD_DISK}
+    if [ $? -ne 0 ]
+    then
       echo "ERROR coul not wipe disk /dev/${ETCD_DISK} in ${master} , aborting"
       exit 1
-  fi
-done
+    fi
+  done
+  sudo touch ${LOCK_WIPE}
+fi
 
 # Exit if etcd_disk does not exists on master
 MASTER_ETCD_DISK=$(ssh -o StrictHostKeyChecking=no -i ~/.ssh/lab_rsa core@master01 'sudo fdisk -l' | grep /dev/${ETCD_DISK} | wc -l)
@@ -51,7 +58,7 @@ fi
 
 # Wait to OCP startup
 echo "Waiting for OCP cluster startup ..."
-/home/lab/wait.sh 2
+/home/lab/wait.sh 1 
 
 # Create the etcd-migration MCP, partition etcd_disk and create FS
 echo "Running the etcd-migration MCP /home/lab/ocp4/etcd-mc-0.yml, partition disk and create FS ..."
