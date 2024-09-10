@@ -93,10 +93,10 @@ then
 else
   for master in ${MASTER_LIST}
   do
-    ssh ${SSH_ARGS} core@${master} sudo wipefs -a /dev/${ETCD_DISK}
+    ssh ${SSH_ARGS} core@${master} sudo wipefs -t ${ETCD_DISK_FS} /dev/${ETCD_DISK}
     if [ $? -ne 0 ]
     then
-      echo "[ERROR] Could NOT wipe disk /dev/${ETCD_DISK} in ${master} , aborting"
+      echo "[ERROR] Could NOT wipe FS='${ETCD_DISK_FS}', disk /dev/${ETCD_DISK} in ${master} , aborting"
       exit 1
     fi
   done
