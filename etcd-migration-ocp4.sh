@@ -86,17 +86,23 @@ do
 done
 
 # Wipe master etcd disks
-echo "[INFO] Wiping etcd_disk, if required ..."
+echo "[INFO] Wiping etcd_disk keeping the original disk label, if required ..."
 if [ -f ${LOCK_WIPE} ]
 then
   echo "[INFO] Detected LOCK_WIPE=${LOCK_WIPE}, etcd disks already wiped"
 else
   for master in ${MASTER_LIST}
   do
-    ssh ${SSH_ARGS} core@${master} sudo wipefs -t ${ETCD_DISK_FS} /dev/${ETCD_DISK}
+    ssh ${SSH_ARGS} core@${master} sudo wipefs -a /dev/${ETCD_DISK}
     if [ $? -ne 0 ]
     then
-      echo "[ERROR] Could NOT wipe FS='${ETCD_DISK_FS}', disk /dev/${ETCD_DISK} in ${master} , aborting"
+      echo "[ERROR] Could NOT wipe disk /dev/${ETCD_DISK} in ${master} , aborting"
+      exit 1
+    fi
+    ssh ${SSH_ARGS} core@${master} sudo e2label /dev/${ETCD_DISK} ${ETCD_DISK_LABEL}
+    if [ $? -ne 0 ]
+    then
+      echo "[ERROR] Could NOT keep LABEL '${ETCD_DISK_LABEL}' for disk /dev/${ETCD_DISK} in ${master} , aborting"
       exit 1
     fi
   done
