@@ -63,15 +63,22 @@ done
 
 # Exit if etcd_disk_fs is not the expected
 echo "[INFO] Checking if etcd_disk_fs is the expected ..."
-for master in ${MASTER_LIST}
-do
-  MASTER_ETCD_DISK_FS=$(ssh ${SSH_ARGS} core@${master} "sudo blkid ${ETCD_DISK}" | awk -F"TYPE=" '{print $2}' | sed 's/"//mg')
-  if [ ! "${MASTER_ETCD_DISK_FS}" == "${ETCD_DISK_FS}" ]
-  then
-    echo "[WARN] MASTER_ETCD_DISK_FS='${MASTER_ETCD_DISK_FS}' NOT equal to expected ETCD_DISK_FS='${ETCD_DISK_FS}' in ${master} for ETCD_DISK='${ETCD_DISK}'. Not executing etcd migration, exit 0"
-    exit 0
-  fi
-done
+
+echo "[INFO] Wiping and xfs-re-labeling etcd_disk, if required ..."
+if [ -f ${LOCK_WIPE} ]
+then
+  echo "[INFO] Detected LOCK_WIPE=${LOCK_WIPE}, etcd disks already wiped"
+else
+  for master in ${MASTER_LIST}
+  do
+    MASTER_ETCD_DISK_FS=$(ssh ${SSH_ARGS} core@${master} "sudo blkid ${ETCD_DISK}" | awk -F"TYPE=" '{print $2}' | sed 's/"//mg')
+    if [ ! "${MASTER_ETCD_DISK_FS}" == "${ETCD_DISK_FS}" ]
+    then
+      echo "[WARN] MASTER_ETCD_DISK_FS='${MASTER_ETCD_DISK_FS}' NOT equal to expected ETCD_DISK_FS='${ETCD_DISK_FS}' in ${master} for ETCD_DISK='${ETCD_DISK}'. Not executing etcd migration, exit 0"
+      exit 0
+    fi
+  done
+fi
 
 # Exit if etcd_disk_label is not the expected
 echo "[INFO] Checking if etcd_disk_label is the expected ..."
