@@ -86,17 +86,17 @@ do
 done
 
 # Wipe master etcd disks
-echo "[INFO] Wiping etcd_disk, if required ..."
+echo "[INFO] Wiping and xfs-re-labeling etcd_disk, if required ..."
 if [ -f ${LOCK_WIPE} ]
 then
   echo "[INFO] Detected LOCK_WIPE=${LOCK_WIPE}, etcd disks already wiped"
 else
   for master in ${MASTER_LIST}
   do
-    ssh ${SSH_ARGS} core@${master} "sudo wipefs -a /dev/${ETCD_DISK}"
+    ssh ${SSH_ARGS} core@${master} "sudo sh -c 'wipefs -a /dev/${ETCD_DISK} && /usr/lib/systemd/systemd-makefs xfs /dev/${ETCD_DISK} && xfs_admin -L ${ETCD_DISK_LABEL} /dev/${ETCD_DISK}'"
     if [ $? -ne 0 ]
     then
-      echo "[ERROR] Could NOT wipe disk /dev/${ETCD_DISK} in ${master} , aborting"
+      echo "[ERROR] Could NOT wipe and xfs-re-label disk /dev/${ETCD_DISK} in ${master} , aborting"
       exit 1
     fi
   done
