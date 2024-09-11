@@ -14,8 +14,8 @@ spec:
           [Unit]
           Description=Make File System on /dev/disk/by-label/ephemeral0
           DefaultDependencies=no
-          BindsTo=dev-ephemeral0.device
-          After=dev-ephemeral0.device var.mount
+          BindsTo=dev-disk-by\x2dlabel-ephemeral0.device
+          After=dev-disk-by\x2dlabel-ephemeral0.device var.mount
           Before=systemd-fsck@dev-ephemeral0.service
 
           [Service]
