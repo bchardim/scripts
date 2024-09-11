@@ -11,7 +11,7 @@ LOCK_WIPE=/.etcd-wipe-ocp4
 SSH_ARGS="-o StrictHostKeyChecking=no -i ~/.ssh/lab_rsa"
 
 # Define etcd_disk
-ETCD_DISK=vdb
+ETCD_DISK=/dev/vdb
 ETCD_DISK_SIZE=10GiB
 ETCD_DISK_LABEL=ephemeral0
 ETCD_DISK_FS=vfat
