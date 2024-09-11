@@ -93,16 +93,10 @@ then
 else
   for master in ${MASTER_LIST}
   do
-    ssh ${SSH_ARGS} core@${master} sudo wipefs -a /dev/${ETCD_DISK}
+    ssh ${SSH_ARGS} core@${master} "sudo wipefs -a /dev/${ETCD_DISK} && sudo e2label /dev/${ETCD_DISK} ${ETCD_DISK_LABEL}"
     if [ $? -ne 0 ]
     then
-      echo "[ERROR] Could NOT wipe disk /dev/${ETCD_DISK} in ${master} , aborting"
-      exit 1
-    fi
-    ssh ${SSH_ARGS} core@${master} sudo e2label /dev/${ETCD_DISK} ${ETCD_DISK_LABEL}
-    if [ $? -ne 0 ]
-    then
-      echo "[ERROR] Could NOT keep LABEL '${ETCD_DISK_LABEL}' for disk /dev/${ETCD_DISK} in ${master} , aborting"
+      echo "[ERROR] Could NOT wipe and relabel disk /dev/${ETCD_DISK} in ${master} , aborting"
       exit 1
     fi
   done
