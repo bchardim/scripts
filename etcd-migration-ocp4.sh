@@ -102,6 +102,7 @@ else
   done
   sudo touch ${LOCK_WIPE}
 fi
+sleep 60
 
 # Create the etcd-migration MCP, partition etcd_disk and create FS
 echo "[INFO] Running the etcd-migration MCP /home/lab/ocp4/etcd-mc-0.yml, partition disk and create FS ..."
