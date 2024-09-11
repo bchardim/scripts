@@ -1,0 +1,84 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 98-var-lib-etcd
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+      - contents: |
+          [Unit]
+          Description=Make File System on /dev/disk/by-label/ephemeral0
+          DefaultDependencies=no
+          BindsTo=dev-ephemeral0.device
+          After=dev-ephemeral0.device var.mount
+          Before=systemd-fsck@dev-ephemeral0.service
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecStart=/usr/lib/systemd/systemd-makefs xfs /dev/disk/by-label/ephemeral0
+          TimeoutSec=0
+
+          [Install]
+          WantedBy=var-lib-containers.mount
+        enabled: true
+        name: systemd-mkfs@dev-ephemeral0.service
+      - contents: |
+          [Unit]
+          Description=Mount /dev/disk/by-label/ephemeral0 to /var/lib/etcd
+          Before=local-fs.target
+          Requires=systemd-mkfs@dev-ephemeral0.service
+          After=systemd-mkfs@dev-ephemeral0.service var.mount
+
+          [Mount]
+          What=/dev/disk/by-label/ephemeral0
+          Where=/var/lib/etcd
+          Type=xfs
+          Options=defaults,prjquota
+
+          [Install]
+          WantedBy=local-fs.target
+        enabled: true
+        name: var-lib-etcd.mount
+      - contents: |
+          [Unit]
+          Description=Sync etcd data if new mount is empty
+          DefaultDependencies=no
+          After=var-lib-etcd.mount var.mount
+          Before=crio.service
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecCondition=/usr/bin/test ! -d /var/lib/etcd/member
+          ExecStart=/usr/sbin/setenforce 0
+          ExecStart=/bin/rsync -ar /sysroot/ostree/deploy/rhcos/var/lib/etcd/ /var/lib/etcd/
+          ExecStart=/usr/sbin/setenforce 1
+          TimeoutSec=0
+
+          [Install]
+          WantedBy=multi-user.target graphical.target
+        enabled: true
+        name: sync-var-lib-etcd-to-etcd.service
+      - contents: |
+          [Unit]
+          Description=Restore recursive SELinux security contexts
+          DefaultDependencies=no
+          After=var-lib-etcd.mount
+          Before=crio.service
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecStart=/sbin/restorecon -R /var/lib/etcd/
+          TimeoutSec=0
+
+          [Install]
+          WantedBy=multi-user.target graphical.target
+        enabled: true
+        name: restorecon-var-lib-etcd.service

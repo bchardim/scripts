@@ -1,0 +1,29 @@
+apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  labels:
+    machineconfiguration.openshift.io/role: master
+  name: 99-var-lib-etcd
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+      - contents: |
+          [Unit]
+          Description=Mount /dev/disk/by-label/ephemeral0 to /var/lib/etcd
+          Before=local-fs.target
+          Requires=systemd-mkfs@dev-ephemeral0.service
+          After=systemd-mkfs@dev-ephemeral0.service var.mount
+
+          [Mount]
+          What=/dev/disk/by-label/ephemeral0
+          Where=/var/lib/etcd
+          Type=xfs
+          Options=defaults,prjquota
+
+          [Install]
+          WantedBy=local-fs.target
+        enabled: true
+        name: var-lib-etcd.mount

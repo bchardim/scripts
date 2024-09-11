@@ -41,7 +41,7 @@ echo "[INFO] Waiting for OCP cluster startup ..."
 echo "[INFO] Checking if etcd_disk exist on masters ..."
 for master in ${MASTER_LIST}
 do
-  MASTER_ETCD_DISK=$(ssh ${SSH_ARGS} core@${master} 'sudo fdisk -l' | grep /dev/${ETCD_DISK} | wc -l)
+  MASTER_ETCD_DISK=$(ssh ${SSH_ARGS} core@${master} 'sudo fdisk -l' | grep ${ETCD_DISK} | wc -l)
   if [ ${MASTER_ETCD_DISK} -eq  0 ]
   then
     echo "[WARN] ETCD_DISK='${ETCD_DISK}' does NOT exist in ${master}, MASTER_ETCD_DISK='${MASTER_ETCD_DISK}'. Not executing etcd migration, exit 0"
@@ -53,7 +53,7 @@ done
 echo "[INFO] Checking if etcd_disk_size is the expected ..."
 for master in ${MASTER_LIST}
 do
-  MASTER_ETCD_DISK_SIZE=$(ssh ${SSH_ARGS} core@${master} 'sudo fdisk -l' | grep /dev/${ETCD_DISK} | cut -d: -f2 | cut -d, -f1 | sed 's/ //mg')
+  MASTER_ETCD_DISK_SIZE=$(ssh ${SSH_ARGS} core@${master} 'sudo fdisk -l' | grep ${ETCD_DISK} | cut -d: -f2 | cut -d, -f1 | sed 's/ //mg')
   if [ ! "${MASTER_ETCD_DISK_SIZE}" == "${ETCD_DISK_SIZE}" ]
   then
     echo "[WARN] MASTER_ETCD_DISK_SIZE='${MASTER_ETCD_DISK_SIZE}' NOT equal to expected ETCD_DISK_SIZE='${ETCD_DISK_SIZE}' in ${master} for ETCD_DISK='${ETCD_DISK}'. Not executing etcd migration, exit 0"
@@ -65,7 +65,7 @@ done
 echo "[INFO] Checking if etcd_disk_fs is the expected ..."
 for master in ${MASTER_LIST}
 do
-  MASTER_ETCD_DISK_FS=$(ssh ${SSH_ARGS} core@${master} "sudo blkid /dev/${ETCD_DISK}" | awk -F"TYPE=" '{print $2}' | sed 's/"//mg')
+  MASTER_ETCD_DISK_FS=$(ssh ${SSH_ARGS} core@${master} "sudo blkid ${ETCD_DISK}" | awk -F"TYPE=" '{print $2}' | sed 's/"//mg')
   if [ ! "${MASTER_ETCD_DISK_FS}" == "${ETCD_DISK_FS}" ]
   then
     echo "[WARN] MASTER_ETCD_DISK_FS='${MASTER_ETCD_DISK_FS}' NOT equal to expected ETCD_DISK_FS='${ETCD_DISK_FS}' in ${master} for ETCD_DISK='${ETCD_DISK}'. Not executing etcd migration, exit 0"
@@ -77,7 +77,7 @@ done
 echo "[INFO] Checking if etcd_disk_label is the expected ..."
 for master in ${MASTER_LIST}
 do
-  MASTER_ETCD_DISK_LABEL=$(ssh ${SSH_ARGS} core@${master} "sudo blkid /dev/${ETCD_DISK}" | awk -F"LABEL=" '{print $2}' | awk -F" " '{print $1}' | sed 's/"//mg')
+  MASTER_ETCD_DISK_LABEL=$(ssh ${SSH_ARGS} core@${master} "sudo blkid ${ETCD_DISK}" | awk -F"LABEL=" '{print $2}' | awk -F" " '{print $1}' | sed 's/"//mg')
   if [ ! "${MASTER_ETCD_DISK_LABEL}" == "${ETCD_DISK_LABEL}" ]
   then
     echo "[WARN] MASTER_ETCD_DISK_LABEL='${MASTER_ETCD_DISK_LABEL}' NOT equal to expected ETCD_DISK_LABEL='${ETCD_DISK_LABEL}' in ${master} for ETCD_DISK='${ETCD_DISK}'. Not executing etcd migration, exit 0"
@@ -93,10 +93,10 @@ then
 else
   for master in ${MASTER_LIST}
   do
-    ssh ${SSH_ARGS} core@${master} "sudo sh -c 'wipefs -a /dev/${ETCD_DISK} && /usr/lib/systemd/systemd-makefs xfs /dev/${ETCD_DISK} && xfs_admin -L ${ETCD_DISK_LABEL} /dev/${ETCD_DISK}'"
+    ssh ${SSH_ARGS} core@${master} "sudo sh -c 'wipefs -a ${ETCD_DISK} && /usr/lib/systemd/systemd-makefs xfs ${ETCD_DISK} && xfs_admin -L ${ETCD_DISK_LABEL} ${ETCD_DISK}'"
     if [ $? -ne 0 ]
     then
-      echo "[ERROR] Could NOT wipe and xfs-re-label disk /dev/${ETCD_DISK} in ${master} , aborting"
+      echo "[ERROR] Could NOT wipe and xfs-re-label disk ${ETCD_DISK} in ${master} , aborting"
       exit 1
     fi
   done
@@ -131,7 +131,7 @@ echo "[INFO] Waiting to etcd-mc-1.yml to finish ..."
 echo "[INFO] Verify that etcd-migration has performed successfully, /var/lib/etcd mounted on etcd_disk partition"
 for master in ${MASTER_LIST}
 do
-  MOUNT_ETCD_DISK=$(ssh ${SSH_ARGS} core@${master} 'sudo df -h' | grep /dev/${ETCD_DISK} | grep /var/lib/etcd | wc -l)
+  MOUNT_ETCD_DISK=$(ssh ${SSH_ARGS} core@${master} 'sudo df -h' | grep ${ETCD_DISK} | grep /var/lib/etcd | wc -l)
   if [ ${MOUNT_ETCD_DISK} -eq  0 ]
   then
     echo "[ERROR] ETCD_DISK='${ETCD_DISK}' partition NOT mounted on /var/lib/etcd in ${master}, MOUNT_ETCD_DISK='${MOUNT_ETCD_DISK}', aborting"
