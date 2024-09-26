@@ -63,8 +63,6 @@ done
 
 # Exit if etcd_disk_fs is not the expected
 echo "[INFO] Checking if etcd_disk_fs is the expected ..."
-
-echo "[INFO] Wiping and xfs-re-labeling etcd_disk, if required ..."
 if [ -f ${LOCK_WIPE} ]
 then
   echo "[INFO] Detected LOCK_WIPE=${LOCK_WIPE}, etcd disks already wiped"
