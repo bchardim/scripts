@@ -9,5 +9,5 @@ ln -s /opt/firefox/firefox /usr/local/bin/firefox
 sudo -u student sh -c "/usr/local/bin/firefox -CreateProfile student"
 rm -rf firefox*
 wget https://raw.githubusercontent.com/mozilla/sumo-kb/main/install-firefox-linux/firefox.desktop -P /usr/local/share/applications
-sed -i 's/firefox %u/firefox -P student/mg' /usr/local/share/applications/firefox.desktop
+sed -i 's/Exec=firefox/Exec=firefox -P student/mg' /usr/local/share/applications/firefox.desktop
 echo $?
