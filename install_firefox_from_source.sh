@@ -8,6 +8,8 @@ tar xjf firefox-${VER}.tar.bz2
 mv firefox /opt
 ln -s /opt/firefox/firefox /usr/local/bin/firefox
 rm -rf firefox*
-PREF=$(find /home/student/.mozilla/firefox -tyep f -name 'prefs.js' | head -1)
-sed -i 's/first_run\"\, false/first_run\"\, true/mg' ${PREF}
 wget https://raw.githubusercontent.com/mozilla/sumo-kb/main/install-firefox-linux/firefox.desktop -P /usr/local/share/applications
+sleep 5
+echo "reboot" | at now + 1 minutes
+sudo -u student sh -c "/usr/local/bin/firefox"
+echo $?
