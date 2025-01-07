@@ -10,4 +10,3 @@ sudo -u student sh -c "/usr/local/bin/firefox -CreateProfile default-release"
 rm -rf firefox*
 wget https://raw.githubusercontent.com/mozilla/sumo-kb/main/install-firefox-linux/firefox.desktop -P /usr/local/share/applications
 sleep 5
-reboot
