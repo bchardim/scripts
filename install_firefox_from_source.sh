@@ -18,9 +18,9 @@ rm -rf firefox*
 wget https://raw.githubusercontent.com/mozilla/sumo-kb/main/install-firefox-linux/firefox.desktop -P /usr/local/share/applications
 
 # Configure firefox for student user
-echo "pkill firefox" | at now + 15 seconds
+echo "pkill firefox" | at now + 1 minutes
 sudo -u student sh -c "/usr/local/bin/firefox"
-sleep 30
+sleep 80
 for pref in $(find /home/student/.mozilla/firefox -type f -name 'prefs.js')
 do
   echo "lockPref("browser.startup.homepage", "https://www.redhat.com/en");" >> ${pref}
