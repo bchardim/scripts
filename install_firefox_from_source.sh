@@ -20,7 +20,7 @@ wget https://raw.githubusercontent.com/mozilla/sumo-kb/main/install-firefox-linu
 # Configure firefox for student user
 echo "pkill firefox" | at now + 1 minutes
 sleep 10
-sudo -u student sh -c "/usr/local/bin/firefox"
+sudo -u student sh -c "/usr/local/bin/firefox --setDefaultBrowser"
 sleep 10
 for pref in $(find /home/student/.mozilla/firefox -type f -name 'prefs.js')
 do
