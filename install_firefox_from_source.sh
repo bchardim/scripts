@@ -20,9 +20,11 @@ wget https://raw.githubusercontent.com/mozilla/sumo-kb/main/install-firefox-linu
 # Configure firefox for student user
 sleep 5
 echo
-echo "##########################################################"
-echo "Perform firefox first-run configuration and close firefox"
-echo "##########################################################"
+echo "#############################################################"
+echo "# Perform firefox first-run configuration and close firefox #"
+echo "# Follow the firefox wizart automatically executed and set  #"
+echo "# as default homepage https://www.redhat.com/en             #"  
+echo "#############################################################"
 echo
 sleep 5
 sudo -u student sh -c "/usr/local/bin/firefox --setDefaultBrowser"
